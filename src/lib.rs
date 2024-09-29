@@ -1,14 +1,24 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Lang {
+    DE,
+    FR,
+    IT,
+    RM,
+    EN,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct IssueTitle {
     #[serde(rename = "langKey")]
-    lang_key: String,
+    lang: Lang,
     text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutcomeCantons {
     #[serde(rename = "jaStaendeGanz")]
     pub yes_full_cantons: u8,
@@ -24,7 +34,7 @@ pub struct OutcomeCantons {
     pub half_canton_count: u8,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Outcome {
     #[serde(rename = "gebietAusgezaehlt")]
     pub count_completed: bool,
@@ -55,12 +65,20 @@ impl Outcome {
         self.cast_ballot_papers - self.valid_votes()
     }
 
+    pub fn valid_votes_ratio(&self) -> f64 {
+        1.0 / self.cast_ballot_papers as f64 * self.valid_votes() as f64
+    }
+
+    pub fn invalid_votes_ratio(&self) -> f64 {
+        1.0 / self.cast_ballot_papers as f64 * self.invalid_votes() as f64
+    }
+
     pub fn turnout(&self) -> f64 {
         1.0 / self.eligible_voters as f64 * self.valid_votes() as f64
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct District {
     #[serde(rename = "geoLevelnummer")]
     pub geo_levelnumber: String,
@@ -70,7 +88,7 @@ pub struct District {
     pub outcome: Outcome,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Commune {
     #[serde(rename = "geoLevelnummer")]
     pub geo_levelnumber: String,
@@ -84,7 +102,7 @@ pub struct Commune {
 
 type Constituency = Commune;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Canton {
     #[serde(rename = "geoLevelnummer")]
     pub geo_levelnumber: String,
@@ -100,7 +118,7 @@ pub struct Canton {
     pub constituencies: Option<Vec<Constituency>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Issue {
     #[serde(rename = "vorlagenId")]
     pub issue_id: u32,
@@ -130,7 +148,19 @@ pub struct Issue {
     pub cantons: Vec<Canton>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl Issue {
+    pub fn get_title(&self, lang: Lang) -> Option<&str> {
+        self.issue_title.iter().find_map(|title| {
+            if title.lang == lang && !title.text.chars().all(char::is_whitespace) {
+                Some(title.text.as_str())
+            } else {
+                None
+            }
+        })
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Country {
     #[serde(rename = "geoLevelnummer")]
     pub geo_levelnumber: u8,
@@ -142,7 +172,7 @@ pub struct Country {
     pub issues: Vec<Issue>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Data {
     pub abstimmtag: String,
     pub timestamp: String,
@@ -165,6 +195,6 @@ mod tests {
         let url =
             "https://ogd-static.voteinfo-app.ch/v1/ogd/sd-t-17-02-20240922-eidgAbstimmung.json";
         let out = get_data(url).await;
-        out.unwrap();
+        assert!(out.is_ok())
     }
 }
