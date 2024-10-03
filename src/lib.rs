@@ -19,22 +19,6 @@ pub struct IssueTitle {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct OutcomeCantons {
-    #[serde(rename = "jaStaendeGanz")]
-    pub yes_full_cantons: u8,
-    #[serde(rename = "neinStaendeGanz")]
-    pub no_full_cantons: u8,
-    #[serde(rename = "anzahlStaendeGanz")]
-    pub full_canton_count: u8,
-    #[serde(rename = "jaStaendeHalb")]
-    pub yes_half_cantons: u8,
-    #[serde(rename = "neinStaendeHalb")]
-    pub no_half_cantons: u8,
-    #[serde(rename = "anzahlStaendeHalb")]
-    pub half_canton_count: u8,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Outcome {
     #[serde(rename = "gebietAusgezaehlt")]
     pub count_completed: bool,
@@ -102,88 +86,176 @@ pub struct Commune {
 
 type Constituency = Commune;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Canton {
-    #[serde(rename = "geoLevelnummer")]
-    pub geo_levelnumber: String,
-    #[serde(rename = "geoLevelname")]
-    pub geo_levelname: String,
-    #[serde(rename = "resultat")]
-    pub outcome: Outcome,
-    #[serde(rename = "bezirke")]
-    pub districts: Option<Vec<District>>,
-    #[serde(rename = "gemeinden")]
-    pub communes: Option<Vec<Commune>>,
-    #[serde(rename = "zaehlkreise")]
-    pub constituencies: Option<Vec<Constituency>>,
-}
+pub mod national {
+    use super::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Issue {
-    #[serde(rename = "vorlagenId")]
-    pub issue_id: u32,
-    #[serde(rename = "reihenfolgeAnzeige")]
-    pub display_order: u32,
-    #[serde(rename = "vorlagenTitel")]
-    pub issue_title: Vec<IssueTitle>,
-    #[serde(rename = "vorlageBeendet")]
-    pub issue_completed: bool,
-    #[serde(rename = "provisorisch")]
-    pub provisional: bool,
-    #[serde(rename = "vorlageAngenommen")]
-    pub issue_accepted: bool,
-    #[serde(rename = "vorlagenArtId")]
-    pub issue_type_id: u32,
-    #[serde(rename = "hauptvorlagenId")]
-    pub main_issue_id: u32,
-    #[serde(rename = "reserveInfoText")]
-    pub reserve_info_text: Option<String>,
-    #[serde(rename = "doppeltesMehr")]
-    pub double_majority: bool,
-    #[serde(rename = "staende")]
-    pub outcome_cantons: OutcomeCantons,
-    #[serde(rename = "resultat")]
-    pub outcome: Outcome,
-    #[serde(rename = "kantone")]
-    pub cantons: Vec<Canton>,
-}
+    #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct OutcomeCantons {
+        #[serde(rename = "jaStaendeGanz")]
+        pub yes_full_cantons: u8,
+        #[serde(rename = "neinStaendeGanz")]
+        pub no_full_cantons: u8,
+        #[serde(rename = "anzahlStaendeGanz")]
+        pub full_canton_count: u8,
+        #[serde(rename = "jaStaendeHalb")]
+        pub yes_half_cantons: u8,
+        #[serde(rename = "neinStaendeHalb")]
+        pub no_half_cantons: u8,
+        #[serde(rename = "anzahlStaendeHalb")]
+        pub half_canton_count: u8,
+    }
 
-impl Issue {
-    pub fn get_title(&self, lang: Lang) -> Option<&str> {
-        self.issue_title.iter().find_map(|title| {
-            if title.lang == lang && !title.text.chars().all(char::is_whitespace) {
-                Some(title.text.as_str())
-            } else {
-                None
-            }
-        })
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Canton {
+        #[serde(rename = "geoLevelnummer")]
+        pub geo_levelnumber: String,
+        #[serde(rename = "geoLevelname")]
+        pub geo_levelname: String,
+        #[serde(rename = "resultat")]
+        pub outcome: Outcome,
+        #[serde(rename = "bezirke")]
+        pub districts: Option<Vec<District>>,
+        #[serde(rename = "gemeinden")]
+        pub communes: Option<Vec<Commune>>,
+        #[serde(rename = "zaehlkreise")]
+        pub constituencies: Option<Vec<Constituency>>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Issue {
+        #[serde(rename = "vorlagenId")]
+        pub issue_id: u32,
+        #[serde(rename = "reihenfolgeAnzeige")]
+        pub display_order: u32,
+        #[serde(rename = "vorlagenTitel")]
+        pub issue_title: Vec<IssueTitle>,
+        #[serde(rename = "vorlageBeendet")]
+        pub issue_completed: bool,
+        #[serde(rename = "provisorisch")]
+        pub provisional: bool,
+        #[serde(rename = "vorlageAngenommen")]
+        pub issue_accepted: bool,
+        #[serde(rename = "vorlagenArtId")]
+        pub issue_type_id: u32,
+        #[serde(rename = "hauptvorlagenId")]
+        pub main_issue_id: u32,
+        #[serde(rename = "reserveInfoText")]
+        pub reserve_info_text: Option<String>,
+        #[serde(rename = "doppeltesMehr")]
+        pub double_majority: bool,
+        #[serde(rename = "staende")]
+        pub outcome_cantons: OutcomeCantons,
+        #[serde(rename = "resultat")]
+        pub outcome: Outcome,
+        #[serde(rename = "kantone")]
+        pub cantons: Vec<Canton>,
+    }
+
+    impl Issue {
+        pub fn get_title(&self, lang: Lang) -> Option<&str> {
+            self.issue_title.iter().find_map(|title| {
+                if title.lang == lang && !title.text.chars().all(char::is_whitespace) {
+                    Some(title.text.as_str())
+                } else {
+                    None
+                }
+            })
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Country {
+        #[serde(rename = "geoLevelnummer")]
+        pub geo_levelnumber: u8,
+        #[serde(rename = "geoLevelname")]
+        pub geo_levelname: String,
+        #[serde(rename = "nochKeineInformation")]
+        pub no_infos_yet: bool,
+        #[serde(rename = "vorlagen")]
+        pub issues: Vec<Issue>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Data {
+        pub abstimmtag: String,
+        pub timestamp: String,
+        #[serde(rename = "schweiz")]
+        pub country: Country,
+    }
+
+    pub async fn get_data(url: &str) -> Result<Data, Box<dyn std::error::Error>> {
+        let response = reqwest::get(url).await?.text().await?;
+        let data: Data = serde_json::from_str(&response)?;
+        Ok(data)
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Country {
-    #[serde(rename = "geoLevelnummer")]
-    pub geo_levelnumber: u8,
-    #[serde(rename = "geoLevelname")]
-    pub geo_levelname: String,
-    #[serde(rename = "nochKeineInformation")]
-    pub no_infos_yet: bool,
-    #[serde(rename = "vorlagen")]
-    pub issues: Vec<Issue>,
-}
+pub mod cantonal {
+    use super::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Data {
-    pub abstimmtag: String,
-    pub timestamp: String,
-    #[serde(rename = "schweiz")]
-    pub country: Country,
-}
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Issue {
+        #[serde(rename = "vorlagenId")]
+        pub issue_id: u32,
+        #[serde(rename = "reihenfolgeAnzeige")]
+        pub display_order: u32,
+        #[serde(rename = "vorlagenTitel")]
+        pub issue_title: Vec<IssueTitle>,
+        #[serde(rename = "vorlageBeendet")]
+        pub issue_completed: bool,
+        #[serde(rename = "vorlageAngenommen")]
+        pub issue_accepted: bool,
+        #[serde(rename = "vorlagenArtId")]
+        pub issue_type_id: u32,
+        #[serde(rename = "hauptvorlagenId")]
+        pub main_issue_id: Option<u32>,
+        #[serde(rename = "resultat")]
+        pub outcome: Outcome,
+        #[serde(rename = "bezirke")]
+        pub districts: Option<Vec<District>>,
+        #[serde(rename = "gemeinden")]
+        pub communes: Option<Vec<Commune>>,
+        #[serde(rename = "zaehlkreise")]
+        pub constituencies: Option<Vec<Constituency>>,
+    }
 
-pub async fn get_data(url: &str) -> Result<Data, Box<dyn std::error::Error>> {
-    let response = reqwest::get(url).await?.text().await?;
-    let data: Data = serde_json::from_str(&response)?;
-    Ok(data)
+    impl Issue {
+        pub fn get_title(&self, lang: Lang) -> Option<&str> {
+            self.issue_title.iter().find_map(|title| {
+                if title.lang == lang && !title.text.chars().all(char::is_whitespace) {
+                    Some(title.text.as_str())
+                } else {
+                    None
+                }
+            })
+        }
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Canton {
+        #[serde(rename = "geoLevelnummer")]
+        pub geo_levelnumber: u8,
+        #[serde(rename = "geoLevelname")]
+        pub geo_levelname: String,
+        #[serde(rename = "nochKeineInformation")]
+        pub no_infos_yet: bool,
+        #[serde(rename = "vorlagen")]
+        pub issues: Vec<Issue>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+    pub struct Data {
+        pub abstimmtag: String,
+        pub timestamp: String,
+        #[serde(rename = "kantone")]
+        pub kantone: Vec<Canton>,
+    }
+
+    pub async fn get_data(url: &str) -> Result<Data, Box<dyn std::error::Error>> {
+        let response = reqwest::get(url).await?.text().await?;
+        let data: Data = serde_json::from_str(&response)?;
+        Ok(data)
+    }
 }
 
 #[cfg(test)]
@@ -191,10 +263,18 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn it_works() {
+    async fn national() {
         let url =
             "https://ogd-static.voteinfo-app.ch/v1/ogd/sd-t-17-02-20240922-eidgAbstimmung.json";
-        let out = get_data(url).await;
-        assert!(out.is_ok())
+        let out = national::get_data(url).await;
+        assert!(out.is_ok());
+    }
+
+    #[tokio::test]
+    async fn cantonal() {
+        let url =
+            "https://ogd-static.voteinfo-app.ch/v1/ogd/sd-t-17-02-20240922-kantAbstimmung.json";
+        let out = cantonal::get_data(url).await;
+        assert!(out.is_ok());
     }
 }
