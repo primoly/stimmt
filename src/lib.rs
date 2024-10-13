@@ -1,5 +1,34 @@
+use anyhow::Result;
 use reqwest;
 use serde::{Deserialize, Serialize};
+
+async fn get_latest_url(url: &str) -> Result<String> {
+    #[derive(Serialize, Deserialize)]
+    struct Resource {
+        coverage: String,
+        url: String,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct Resources {
+        resources: Vec<Resource>,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct Results {
+        result: Resources,
+    }
+
+    let response = reqwest::get(url).await?.text().await?;
+    let results: Results = serde_json::from_str(&response)?;
+    let resources = results.result.resources;
+    let resource = resources.iter().max_by(|a, b| a.coverage.cmp(&b.coverage));
+    if let Some(resource) = resource {
+        Ok(resource.url.clone())
+    } else {
+        Err(anyhow::Error::msg("no resources found"))
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -183,7 +212,15 @@ pub mod national {
         pub country: Country,
     }
 
-    pub async fn get_data(url: &str) -> Result<Data, Box<dyn std::error::Error>> {
+    pub async fn get_data_by_url(url: &str) -> Result<Data> {
+        let response = reqwest::get(url).await?.text().await?;
+        let data: Data = serde_json::from_str(&response)?;
+        Ok(data)
+    }
+
+    pub async fn get_latest() -> Result<Data> {
+        let url = "https://ckan.opendata.swiss/api/3/action/package_show?id=echtzeitdaten-am-abstimmungstag-zu-eidgenoessischen-abstimmungsvorlagen";
+        let url = get_latest_url(url).await?;
         let response = reqwest::get(url).await?.text().await?;
         let data: Data = serde_json::from_str(&response)?;
         Ok(data)
@@ -251,7 +288,15 @@ pub mod cantonal {
         pub kantone: Vec<Canton>,
     }
 
-    pub async fn get_data(url: &str) -> Result<Data, Box<dyn std::error::Error>> {
+    pub async fn get_data_by_url(url: &str) -> Result<Data> {
+        let response = reqwest::get(url).await?.text().await?;
+        let data: Data = serde_json::from_str(&response)?;
+        Ok(data)
+    }
+
+    pub async fn get_latest() -> Result<Data> {
+        let url = "https://ckan.opendata.swiss/api/3/action/package_show?id=echtzeitdaten-am-abstimmungstag-zu-kantonalen-abstimmungsvorlagen";
+        let url = get_latest_url(url).await?;
         let response = reqwest::get(url).await?.text().await?;
         let data: Data = serde_json::from_str(&response)?;
         Ok(data)
@@ -263,18 +308,30 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn national() {
+    async fn national_by_url() {
         let url =
             "https://ogd-static.voteinfo-app.ch/v1/ogd/sd-t-17-02-20240922-eidgAbstimmung.json";
-        let out = national::get_data(url).await;
+        let out = national::get_data_by_url(url).await;
         assert!(out.is_ok());
     }
 
     #[tokio::test]
-    async fn cantonal() {
+    async fn national_latest() {
+        let out = national::get_latest().await;
+        assert!(out.is_ok());
+    }
+
+    #[tokio::test]
+    async fn cantonal_by_url() {
         let url =
             "https://ogd-static.voteinfo-app.ch/v1/ogd/sd-t-17-02-20240922-kantAbstimmung.json";
-        let out = cantonal::get_data(url).await;
+        let out = cantonal::get_data_by_url(url).await;
+        assert!(out.is_ok());
+    }
+
+    #[tokio::test]
+    async fn cantonal_latest() {
+        let out = cantonal::get_latest().await;
         assert!(out.is_ok());
     }
 }
